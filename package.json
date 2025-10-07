@@ -1,5 +1,5 @@
 {
-  "name": "web-demuxer",
+  "name": "web-demuxer-abacusismad",
   "version": "3.0.2",
   "description": "Demux media files in the browser using WebAssembly, designed for WebCodecs",
   "type": "module",
@@ -65,7 +65,7 @@
     "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",
     "release-it": "^17.1.1",
-    "typescript": "^5.2.2",
+    "typescript": "^5.9.3",
     "vite": "^5.1.4",
     "vite-plugin-dts": "^3.7.3",
     "vite-plugin-static-copy": "^1.0.5"
@@ -86,5 +86,8 @@
     "video",
     "audio",
     "media"
-  ]
+  ],
+  "dependencies": {
+    "pnpm": "^10.18.1"
+  }
 }

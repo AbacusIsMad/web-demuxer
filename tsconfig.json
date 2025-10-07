@@ -19,5 +19,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
+  "include": ["src/**/*"],
+  "exclude": ["vite.config.ts", "playwright.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
