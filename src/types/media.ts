@@ -22,13 +22,8 @@ export const MEDIA_TYPE_TO_AVMEDIA_TYPE = {
   [SUBTITLE]: AVMediaType.AVMEDIA_TYPE_SUBTITLE
 } as const;
 
-// Extended VideoDecoderConfig to include rotation property
-export interface ExtendedVideoDecoderConfig extends VideoDecoderConfig {
-  rotation?: number;
-}
-
 export type MediaTypeToConfig = {
-  [VIDEO]: ExtendedVideoDecoderConfig;
+  [VIDEO]: VideoDecoderConfig;
   [AUDIO]: AudioDecoderConfig;
 }
 

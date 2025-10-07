@@ -34,6 +34,7 @@
       "start_time": 0,
       "duration": 10.027,
       "rotation": 0,
+      "flip": false,
       "nb_frames": "250",
       "tags": {
         "VENDOR_ID": "[0][0][0][0]",
@@ -4028,6 +4029,7 @@
       "start_time": 0.019,
       "duration": 10.027,
       "rotation": 0,
+      "flip": false,
       "nb_frames": "-9223372036854775808",
       "tags": {
         "VENDOR_ID": "[0][0][0][0]",

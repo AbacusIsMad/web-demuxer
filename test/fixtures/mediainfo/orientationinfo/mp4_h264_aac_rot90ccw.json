@@ -1,0 +1,19 @@
+{
+  "streams": [
+    {
+      "id": 1,
+      "rotation": 270,
+      "flip": false
+    },
+    {
+      "id": 2,
+      "rotation": 0,
+      "flip": false
+    },
+    {
+      "id": 3,
+      "rotation": 0,
+      "flip": false
+    }
+  ]
+}
