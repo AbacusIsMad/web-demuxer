@@ -82,6 +82,7 @@
       "start_time": 0.08,
       "duration": 10.106,
       "rotation": 0,
+      "flip": false,
       "nb_frames": "252",
       "tags": {}
     },
@@ -120,6 +121,7 @@
       "start_time": 0.08,
       "duration": 10.106,
       "rotation": 0,
+      "flip": false,
       "nb_frames": "-9223372036854775808",
       "tags": {}
     }

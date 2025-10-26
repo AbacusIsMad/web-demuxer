@@ -5,8 +5,12 @@
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
+#include <emscripten/console.h>
 
 using namespace emscripten;
+
+// fixed point to double conversion (from FFmpeg display.c)
+#define CONV_FP(x) ((double) (x)) / (1 << 16)
 
 extern "C"
 {
@@ -57,6 +61,7 @@ typedef struct WebAVStream
     std::string sample_aspect_ratio;
     std::string display_aspect_ratio;
     double rotation;
+    bool flip;
     /** Audio-specific Info */
     int channels;
     int sample_rate;
@@ -111,39 +116,73 @@ typedef struct WebMediaInfo
     std::vector<WebAVStream> streams;
 } WebMediaInfo;
 
-double get_rotation(AVStream *stream)
+typedef struct OrientationInfo
 {
-    AVDictionaryEntry *rotate_tag = av_dict_get(stream->metadata, "rotate", NULL, 0);
+    double rotation;
+    bool hflip;
+} OrientationInfo;
+
+OrientationInfo get_orientation(AVStream *stream)
+{
     double theta = 0;
+    bool hflip = false;
+    bool displaymatrix_found = false;
+    for (int i = 0; i < stream->codecpar->nb_coded_side_data; i++) {
+        AVPacketSideData *sd = &stream->codecpar->coded_side_data[i];
 
-    // prioritize using metatdata rotation tag
-    if (rotate_tag && (*rotate_tag->value) && strcmp(rotate_tag->value, "0"))
-    {
-        char *tail;
-        theta = av_strtod(rotate_tag->value, &tail);
-        if (*tail)
-        {
-            theta = 0;
-        }
-    }
-
-    if (!theta){
-        for (int i = 0; i < stream->codecpar->nb_coded_side_data; i++) {
-            AVPacketSideData *sd = &stream->codecpar->coded_side_data[i];
-
-            if (sd->type == AV_PKT_DATA_DISPLAYMATRIX && sd->size >= 9*4) {
-                theta = -av_display_rotation_get((int32_t *)sd->data);
+        if (sd->type == AV_PKT_DATA_DISPLAYMATRIX && sd->size >= 9*(sizeof(int32_t))) {
+            displaymatrix_found = true;
+            int32_t matrix[9];
+            std::memcpy(matrix, sd->data, 9*(sizeof(int32_t)));
+            /*
+                *  p' = (a * p + c * q + x) / z;
+                *  q' = (b * p + d * q + y) / z;
+                *  z  =  u * p + v * q + w
+            */
+            // 16.16 fixed point
+            int64_t a = matrix[0]; int64_t b = matrix[1]; // x and y doesn't matter
+            int64_t c = matrix[3]; int64_t d = matrix[4];
+            // 2.30 fixed point, for perspective
+            int32_t u = matrix[6]; int32_t v = matrix[7]; int32_t w = matrix[8];
+            // but if any of them are nonstandard, don't do anything
+            if ((u != 0) || (v != 0) || (w != (1 << 30))) {
+                theta = 0;
+                hflip = false;
+            } else {
+                // Use determinant to detect if any flip occurred
+                int64_t det = a * d - b * c;
+                // same value for both h/vflip since we only use hflip anyway
+                hflip = det < 0;
+                
+                // Try to resolve flips as webcodecs flips after rotation
+                if (hflip) {
+                    av_display_matrix_flip(matrix, hflip, false);
+                }
+                theta = -av_display_rotation_get(matrix);
+                
                 if (std::isnan(theta))
                     theta = 0;
-                
-                break;
+            }
+            break;
+        }
+    }
+    if (!displaymatrix_found) {
+        // rotate tag is legacy, no flip info
+        AVDictionaryEntry *rotate_tag = av_dict_get(stream->metadata, "rotate", NULL, 0);
+        if (rotate_tag && (*rotate_tag->value) && strcmp(rotate_tag->value, "0"))
+        {
+            char *tail;
+            theta = av_strtod(rotate_tag->value, &tail);
+            if (*tail)
+            {
+                theta = 0;
             }
         }
     }
-    
+    // normalize
     theta -= 360*floor(theta/360 + 0.9/360);
 
-    return theta;
+    return { .rotation = theta, .hflip = hflip };
 }
 
 std::string gen_rational_str(AVRational rational, char sep)
@@ -207,6 +246,7 @@ void gen_web_stream(WebAVStream &web_stream, AVStream *stream, AVFormatContext *
     web_stream.r_frame_rate = "0/0";
     web_stream.avg_frame_rate = "0/0";
     web_stream.rotation = 0;
+    web_stream.flip = false;
     web_stream.sample_aspect_ratio = "N/A";
     web_stream.display_aspect_ratio = "N/A";
     // Initialize audio-specific values
@@ -228,7 +268,9 @@ void gen_web_stream(WebAVStream &web_stream, AVStream *stream, AVFormatContext *
         web_stream.pix_fmt = safe_str(av_get_pix_fmt_name((AVPixelFormat)par->format));
         web_stream.r_frame_rate = gen_rational_str(stream->r_frame_rate, '/');
         web_stream.avg_frame_rate = gen_rational_str(stream->avg_frame_rate, '/');
-        web_stream.rotation = get_rotation(stream);
+        OrientationInfo ori_info = get_orientation(stream);
+        web_stream.rotation = ori_info.rotation;
+        web_stream.flip = ori_info.hflip;
         
         AVRational sar = av_guess_sample_aspect_ratio(fmt_ctx, stream, NULL);
         if (sar.num) {
@@ -684,6 +726,7 @@ EMSCRIPTEN_BINDINGS(web_demuxer)
         .property("start_time", &WebAVStream::start_time)
         .property("duration", &WebAVStream::duration)
         .property("rotation", &WebAVStream::rotation)
+        .property("flip", &WebAVStream::flip)
         .property("nb_frames", &WebAVStream::nb_frames)
         .property("tags", &WebAVStream::get_tags)
         .property("color_primaries", &WebAVStream::color_primaries)

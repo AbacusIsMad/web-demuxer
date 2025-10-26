@@ -1,0 +1,25 @@
+{
+  "streams": [
+    {
+      "id": 1,
+      "rotation": 0,
+      "flip": true,
+      "comment": "vflip + rotate 180 = hflip"
+    },
+    {
+      "id": 2,
+      "rotation": 0,
+      "flip": false
+    },
+    {
+      "id": 3,
+      "rotation": 0,
+      "flip": false
+    },
+    {
+      "id": 4,
+      "rotation": 0,
+      "flip": false
+    }
+  ]
+}
