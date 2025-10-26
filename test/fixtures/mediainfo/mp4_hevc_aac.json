@@ -2491,6 +2491,7 @@
       "start_time": 0,
       "duration": 10,
       "rotation": 0,
+      "flip": false,
       "nb_frames": "250",
       "tags": {
         "language": "und",
@@ -2531,6 +2532,7 @@
       "start_time": 0,
       "duration": 10.026666666666666,
       "rotation": 0,
+      "flip": false,
       "nb_frames": "470",
       "tags": {
         "language": "und",
@@ -2631,6 +2633,7 @@
       "start_time": 0,
       "duration": 10,
       "rotation": 0,
+      "flip": false,
       "nb_frames": "1",
       "tags": {
         "language": "eng",
