@@ -76,6 +76,7 @@
       "start_time": 0,
       "duration": 10,
       "rotation": 0,
+      "flip": false,
       "nb_frames": "250",
       "tags": {
         "creation_time": "2012-03-13T08:58:06.000000Z",
@@ -116,6 +117,7 @@
       "start_time": 0,
       "duration": 10.026666666666666,
       "rotation": 0,
+      "flip": false,
       "nb_frames": "470",
       "tags": {
         "creation_time": "2012-03-13T08:58:06.000000Z",
@@ -155,6 +157,7 @@
       "start_time": 0,
       "duration": 10.026666666666666,
       "rotation": 0,
+      "flip": false,
       "nb_frames": "470",
       "tags": {
         "creation_time": "2012-03-13T08:58:06.000000Z",
@@ -235,6 +238,7 @@
       "start_time": 0,
       "duration": 10,
       "rotation": 0,
+      "flip": false,
       "nb_frames": "1",
       "tags": {
         "creation_time": "2012-03-13T08:58:06.000000Z",

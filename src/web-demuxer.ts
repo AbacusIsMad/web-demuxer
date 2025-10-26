@@ -368,6 +368,7 @@ export class WebDemuxer {
         codedHeight: avStream.height,
         description: avStream.extradata?.length > 0 ? avStream.extradata : undefined,
         rotation: avStream.rotation,
+        flip: avStream.flip,
       } as MediaTypeToConfig[T];
     } else {
       return {
