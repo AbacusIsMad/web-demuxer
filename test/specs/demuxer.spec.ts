@@ -12,16 +12,17 @@ interface TestFile {
 const pageUrl = 'http://localhost:5173';
 const inputFileSelector = '#example-get-media-info-file';
 
-const getTestFiles = (): TestFile[] => {
-  const samplesDir = path.join(__dirname, '..', 'samples');
-  return fs.readdirSync(samplesDir)
-    .map(file => ({
-      path: path.join(samplesDir, file),
-      name: file
+const getTestFiles = (filePath: string): TestFile[] => {
+  const samplesDir = path.join(__dirname, filePath);
+  return fs.readdirSync(samplesDir, { withFileTypes: true })
+    .filter(dirent => dirent.isFile())
+    .map(dirent => ({
+      path: path.join(samplesDir, dirent.name),
+      name: dirent.name
     }));
 };
 
-for (const {path: testFilePath, name} of getTestFiles()) {
+for (const {path: testFilePath, name} of getTestFiles(path.join('..', 'samples'))) {
   test(`should get correct media info for ${name}`, async ({ page }) => {
     await page.goto(pageUrl);
     await page.setInputFiles(inputFileSelector, testFilePath);
@@ -96,5 +97,45 @@ for (const {path: testFilePath, name} of getTestFiles()) {
     expect(audioPacket.data.buffer).toBeDefined();
     expect(audioPacket.data.buffer.byteLength).toBeGreaterThan(0);
     expect(audioPacket.timestamp).toBeGreaterThan(0);
+  });
+}
+
+for (const {path: testFilePath, name} of getTestFiles(path.join('..', 'samples', 'orientation'))) {
+  test(`should get correct rotation and flip for ${name}`, async ({ page }) => {
+    await page.goto(pageUrl);
+    await page.setInputFiles(inputFileSelector, testFilePath);
+
+    const mediaInfo = await page.evaluate(async (inputFileSelector) => {
+      const file = (document.querySelector(inputFileSelector) as HTMLInputElement).files![0];
+      await window.demuxer.load(file);
+      return await window.demuxer.getMediaInfo();
+    }, inputFileSelector);
+
+    const mediaInfoJsonPath = path.join(__dirname, '..', 'fixtures', 'mediainfo', 'orientationinfo', name.replace(/\.[^.]+$/, '.json'));
+    const expectedInfo = JSON.parse(fs.readFileSync(mediaInfoJsonPath, 'utf-8'));
+
+    expect(mediaInfo).toBeDefined();
+
+    // Extract only rotation and flip fields from streams
+    const extractOrientationFields = (info: any) => {
+      return {
+        streams: info.streams.map((stream: any) => ({
+          id: stream.id,
+          rotation: stream.rotation,
+          flip: stream.flip
+        }))
+      };
+    };
+
+    const actualOrientation = extractOrientationFields(mediaInfo);
+    const expectedOrientation = extractOrientationFields(expectedInfo);
+    
+    try {
+      expect(actualOrientation).toEqual(expectedOrientation);
+    } catch (error) {
+      console.log('Actual Orientation:', JSON.stringify(actualOrientation, null, 2));
+      console.log('Expected Orientation:', JSON.stringify(expectedOrientation, null, 2));
+      throw error;
+    }
   });
 }
