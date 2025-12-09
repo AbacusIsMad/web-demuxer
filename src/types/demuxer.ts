@@ -32,6 +32,7 @@ export interface WebAVStream {
   start_time: number;
   duration: number;
   rotation: number;
+  flip: boolean;
   nb_frames: string;
   tags: Record<string, string>
 }
